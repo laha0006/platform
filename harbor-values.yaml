@@ -1,0 +1,28 @@
+expose:
+  ingress:
+    hosts:
+      core: cr.larsfriis.dev
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-production
+    tls:
+      enabled: true
+      certSource: secret
+      secret:
+        secretName: harbor-tls
+externalURL: https://cr.larsfriis.dev
+
+harborAdminPassword: "ChangeMe123!!"
+
+persistence:
+  enabled: true
+  persistentVolumeClaim:
+    registry:
+      size: 20Gi
+    chartmuseum:
+      size: 5Gi
+    jobservice:
+      size: 1Gi
+    database:
+      size: 5Gi
+    redis:
+      size: 1Gi
