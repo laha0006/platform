@@ -1,0 +1,10 @@
+controller:
+  ingress:
+    enabled: true
+    hostName: ci.larsfriis.dev
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-production
+    tls:
+    - hosts:
+      - ci.larsfriis.dev
+      secretName: jenkins-tls
