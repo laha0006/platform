@@ -4,11 +4,11 @@ metadata:
   name: letsencrypt-production
 spec:
   acme:
-    email: YOUR_EMAIL@example.com
+    email: tolanatolana@gmail.com
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-production-account-key
     solvers:
     - http01:
         ingress:
-          class: traefik
+          ingressClassName: traefik
