@@ -68,3 +68,27 @@ helm install cert-manager jetstack/cert-manager \
 helm repo add harbor https://helm.goharbor.io
 helm repo update
 ```
+
+```bash
+kubectl create namespace harbor
+helm upgrade --install harbor harbor/harbor \
+  -n harbor \
+  -f harbor-values.yaml \
+  --create-namespace
+```
+
+##### create robot account and harbor credentials in k8s
+
+-   create a robot account for the project in harbor.
+-   create secret harbor credentials in k8s.
+
+```bash
+kubectl create secret docker-registry harbor-cred \
+  --docker-server=cr.domain.dev \
+  --docker-username='robot$tools+jenkins' \
+  --docker-password='xxxxxxxxxxxxxx' \
+  --docker-email='noreply@example.com' \
+  -n jenkins
+```
+
+-   in jenkins set pullImageSecret to 'harbor-cred'
