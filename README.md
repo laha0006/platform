@@ -1,4 +1,4 @@
-## Steps
+## Instructions
 
 ### Install k3s
 
