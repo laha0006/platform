@@ -92,3 +92,31 @@ kubectl create secret docker-registry harbor-cred \
 ```
 
 -   in jenkins set pullImageSecret to 'harbor-cred'
+
+### Kafka strimzi.io
+
+-   create namespace for kafka
+
+```bash
+kubectl create namespace kafka
+```
+
+-   install strimzi (CRD definitions, and operators)
+
+```bash
+kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
+
+```
+
+-   create single node cluster
+
+```bash
+kubectl apply -f https://strimzi.io/examples/latest/kafka/kafka-single-node.yaml -n kafka
+
+```
+
+in-cluster boostrap
+
+```
+my-cluster-kafka-boostrap.kafka:9092
+```
