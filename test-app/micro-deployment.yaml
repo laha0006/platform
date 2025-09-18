@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: micro-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: micro
+  template:
+    metadata:
+      labels:
+        component: micro
+    spec:
+      containers:
+      - name: micro
+        image: kube/micro-jvm:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: KAFKA_BOOTSTRAP
+          value: my-cluster-kafka-bootstrap.kafka:9092

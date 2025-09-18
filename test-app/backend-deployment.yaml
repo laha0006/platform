@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: backend
+  template:
+    metadata:
+      labels:
+        component: backend
+    spec:
+      containers:
+      - name: backend
+        image: kube/back-jvm:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: KAFKA_BOOTSTRAP
+          value: my-cluster-kafka-bootstrap.kafka:9092
+        - name: DB_HOST
+          value: cluster-example-rw
+        - name: DB_PORT
+          value: '5432'
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: cluster-example-app
+              key: username
+        - name: DB_DATABASE
+          value: app
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: cluster-example-app
+              key: password
