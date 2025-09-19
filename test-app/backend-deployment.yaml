@@ -28,7 +28,7 @@ spec:
         - name: KAFKA_BOOTSTRAP
           value: my-cluster-kafka-bootstrap.kafka:9092
         - name: DB_HOST
-          value: cluster-example-rw.default
+          value: cluster-example-rw
         - name: DB_PORT
           value: '5432'
         - name: DB_USER
