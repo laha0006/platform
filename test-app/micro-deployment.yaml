@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: micro-deployment
+imagePullSecrets:
+- name: harbor-test-app-cred
 spec:
   replicas: 1
   selector:
@@ -14,8 +16,7 @@ spec:
     spec:
       containers:
       - name: micro
-        image: kube/micro-jvm:latest
-        imagePullPolicy: Never
+        image: cr.larsfriis.dev/test/micro:latest
         ports:
         - containerPort: 8080
         env:

@@ -120,3 +120,87 @@ in-cluster boostrap
 ```
 my-cluster-kafka-boostrap.kafka:9092
 ```
+
+### CloudNativePG
+
+Offers postgres operators, and CRD for manging clusters of postgres databases.
+Very powerful.
+
+-   install cnpg operator and crds
+
+```bash
+kubectl apply --server-side -f \
+ https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.27/releases/cnpg-1.27.0.yaml
+```
+
+-   check deployment
+
+```bash
+kubectl rollout status deployment \
+ -n cnpg-system cnpg-controller-manager
+```
+
+##### create postgres cluster
+
+```yaml
+kind: Cluster
+metadata:
+    name: cluster-example
+spec:
+    instances: 3
+
+    storage:
+        size: 1Gi
+```
+
+-   apply the cluster CRD (optionally add a -n namespace)
+
+```bash
+kubectl apply -f 'https://cloudnative-pg.io/documentation/current/samples/cluster-example.yaml'
+
+```
+
+##### connecting to the database
+
+the cluster exposes 3 services
+which is the prefered way to connect.
+
+```bash
+cluster-name-r
+cluster-name-ro
+cluster-name-rw
+```
+
+-   example dns (can omit namespace if the cluster is on the same namespace as the application trying to connect.)
+
+```bash
+<cluster-name>-r.<namespace>
+<cluster-name>-ro.<namespace>
+<cluster-name>-rw.<namespace>
+```
+
+-   cnpg creates two basic auth secrets
+
+```bash
+<cluster-name>-superuser
+<cluster-name>-app
+```
+
+these secrets contains username, password and other info that is useful/needed for connecting.
+
+-   example usage
+
+```yaml
+- name: DB_USER
+  valueFrom:
+      secretKeyRef:
+          name: cluster-example-app
+          key: username
+- name: DB_DATABASE
+  value: app
+- name: DB_PASS
+  valueFrom:
+      secretKeyRef:
+          name: cluster-example-app
+          key: password
+```

@@ -2,11 +2,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: test-app-ingress-service
-  # annotations:  nginx.ingress.kubernetes.io/rewrite-target: /
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
-  - http:
+  - host: larsfriis.dev
+    http:
       paths:
       - pathType: Prefix
         path: "/"
@@ -22,3 +24,7 @@ spec:
             name: backend-cluster-ip-service
             port:
               number: 8080
+  tls:
+  - hosts:
+    - larsfriis.dev
+    secretName: test-app-tls

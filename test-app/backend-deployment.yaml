@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deployment
+imagePullSecrets:
+- name: harbor-test-app-cred
 spec:
   replicas: 1
   selector:
@@ -14,15 +16,21 @@ spec:
     spec:
       containers:
       - name: backend
-        image: kube/back-jvm:latest
-        imagePullPolicy: Never
+        image: cr.larsfriis.dev/test/backend:latest
         ports:
         - containerPort: 8080
+        resources:
+          requests:
+            cpu: 200m
+            memory: 500Mi
+          limits:
+            cpu: 12000m
+            memory: 12Gi
         env:
         - name: KAFKA_BOOTSTRAP
           value: my-cluster-kafka-bootstrap.kafka:9092
         - name: DB_HOST
-          value: cluster-example-rw
+          value: cluster-example-rw.default
         - name: DB_PORT
           value: '5432'
         - name: DB_USER
