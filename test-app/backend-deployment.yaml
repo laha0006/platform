@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deployment
-imagePullSecrets:
-- name: harbor-test-app-cred
 spec:
   replicas: 1
   selector:
@@ -45,3 +43,5 @@ spec:
             secretKeyRef:
               name: cluster-example-app
               key: password
+      imagePullSecrets:
+      - name: harbor-test-app-cred

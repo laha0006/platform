@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: micro-deployment
-imagePullSecrets:
-- name: harbor-test-app-cred
 spec:
   replicas: 1
   selector:
@@ -22,3 +20,6 @@ spec:
         env:
         - name: KAFKA_BOOTSTRAP
           value: my-cluster-kafka-bootstrap.kafka:9092
+
+      imagePullSecrets:
+      - name: harbor-test-app-cred

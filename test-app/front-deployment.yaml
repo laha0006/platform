@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: front-deployment
-imagePullSecrets:
-- name: harbor-test-app-cred
 spec:
   replicas: 1
   selector:
@@ -19,3 +17,6 @@ spec:
         image: cr.larsfriis.dev/test/frontend:latest
         ports:
         - containerPort: 8181
+
+      imagePullSecrets:
+      - name: harbor-test-app-cred
