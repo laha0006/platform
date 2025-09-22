@@ -19,7 +19,7 @@ spec:
             port:
               name: https
   tls:
-  - passthrough: true
   - hosts:
     - argocd.larsfriis.dev
     secretName: argocd-server-tls
+    passthrough: true
