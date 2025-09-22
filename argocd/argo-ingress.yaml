@@ -22,4 +22,3 @@ spec:
   - hosts:
     - argocd.larsfriis.dev
     secretName: argocd-server-tls
-    passthrough: true
