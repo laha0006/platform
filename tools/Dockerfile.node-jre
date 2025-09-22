@@ -7,7 +7,7 @@ RUN addgroup -S app && adduser -S app -G app
 RUN apk add --no-cache \
   chromium nss freetype harfbuzz ttf-freefont ca-certificates \
   openjdk21-jre-headless \
-  curl wget git gnupg lsb-release tar gzip bash openssl
+  curl wget git gnupg lsb-release tar gzip bash openssl yq
 
 # Tools
 RUN npm install -g @angular/cli
@@ -34,6 +34,3 @@ RUN chown -R app:app /workspace \
   && chown -R app:app /home/app
 
 USER app
-
-# Default command (example)
-# CMD ["ng", "test", "--browsers=ChromeHeadless", "--no-watch", "--no-progress", "--code-coverage"]
