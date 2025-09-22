@@ -7,7 +7,7 @@ RUN addgroup -S app && adduser -S app -G app
 RUN apk add --no-cache \
   chromium nss freetype harfbuzz ttf-freefont ca-certificates \
   openjdk21-jre-headless \
-  curl wget git gnupg lsb-release tar gzip bash openssl yq
+  curl wget git gnupg lsb-release tar gzip bash openssl yq openssh-client
 
 # Tools
 RUN npm install -g @angular/cli
