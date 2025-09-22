@@ -1,0 +1,225 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'node-22'
+    }
+
+    environment {
+        PROJECT_NAME = ''
+        PROJECT_VERSION = ''
+        PROJECT_BRANCH = 'DEV'
+        IMAGE_PULL_SECRET_NAME = 'azure-brklub-container-registry-credential'
+
+        CONTAINER_REGISTRY = 'bksbsip.azurecr.io'
+
+        GITOPS_ORG = 'bksbsip'
+        GITOPS_PROJECT = 'gitops_sandbox'
+        GITOPS_REPO = setDefaultGitOpsRepo() // kan give med som variabel og bestemmer hvilke argo app der skal deployes til
+    }
+
+    stages {
+        stage('Read from package.json') {
+            steps {
+                script {
+                    // Read the package.json file and parse it as JSON
+                    def packageJson = readJSON file: 'package.json'
+
+                    // Extract name and version
+                    PROJECT_NAME = packageJson.name
+                    PROJECT_VERSION = "${packageJson.version}-SNAPSHOT"
+
+                    // Print the values for verification
+                    echo "Application Name: ${PROJECT_NAME}"
+                    echo "Application Version: ${PROJECT_VERSION}"
+                }
+            }
+        }
+
+        stage('Clean Install Project') {
+            steps {
+                sh 'npm ci' 
+            }
+        }
+        stage('Angular Test') {
+            steps {
+                script {   
+                    sh 'ng test --no-watch --no-progress --browsers=ChromeHeadless --code-coverage'
+                }
+            }
+        }
+        stage('Sonar Scan gui') {
+            steps {
+                 withSonarQubeEnv('SonarQube') {
+                    sh "sonar-scanner -Dsonar.projectKey=${PROJECT_NAME}-gui_${PROJECT_BRANCH} -Dsonar.PROJECT_NAME=${PROJECT_NAME}-gui_${PROJECT_BRANCH} -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.qualitygate.wait=true"
+                }
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                script {
+                    sh "docker build --no-cache -t ${CONTAINER_REGISTRY}/${PROJECT_NAME}:${PROJECT_VERSION} ."
+                }
+            }
+        }
+        stage('Trivy Scan') {
+            steps {
+                script {
+                    sh "trivy image --db-repository public.ecr.aws/aquasecurity/trivy-db --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress --timeout 15m ${CONTAINER_REGISTRY}/${PROJECT_NAME}:${PROJECT_VERSION}"
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                script {
+                    docker.withRegistry("https://${CONTAINER_REGISTRY}", 'container-registry') {
+                        sh "docker push ${CONTAINER_REGISTRY}/${PROJECT_NAME}:${PROJECT_VERSION}"
+                    }
+                }
+            }
+        }
+
+        stage('Create Kubernetes YAML') {
+            steps {
+                script {
+                    dir('gitops-yaml') {
+                        // Generate YAML content
+                        def yamlContent = getK8sYaml(PROJECT_NAME, PROJECT_VERSION, CONTAINER_REGISTRY, IMAGE_PULL_SECRET_NAME)
+                        writeFile file: 'kubernetes_deploy.yaml', text: yamlContent
+
+                        def timeInMillis = System.currentTimeMillis()
+
+                        // Modify YAML with annotations
+                        def deploymentFile = readYaml(file: 'kubernetes_deploy.yaml')
+                        for (int i = 0; i < deploymentFile.size(); ++i) {
+                            deploymentFile[i].metadata.annotations = [:]
+                            deploymentFile[i].metadata.annotations.put('jenkins/build-timestamp', "${timeInMillis}")
+                            deploymentFile[i].metadata.annotations.put('jenkins/build-commit', "${env.GIT_COMMIT}")
+                            deploymentFile[i].metadata.annotations.put('jenkins/build-number', "${env.BUILD_NUMBER}")
+                        }
+
+                        // Write final YAML to a file
+                        writeYaml(file: "kubernetes_final.yaml", datas: deploymentFile, overwrite: true)
+
+                        // Stash file for next step
+                        stash includes: 'kubernetes_final.yaml', name: 'k8s-yaml'
+                        // Archive the YAML file
+                        archiveArtifacts artifacts: 'kubernetes_final.yaml', fingerprint: true
+                    }
+                }
+            }
+        }
+
+        stage('GitOps Push') {
+            steps {
+                script {
+                    dir('gitops') {
+                        // Clone GitOps repository
+                        withCredentials([usernamePassword(credentialsId: 'azure-git-read-write-access', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                            git branch: 'master', url: "https://${GIT_USERNAME}:${GIT_PASSWORD}@dev.azure.com/${GITOPS_ORG}/${GITOPS_PROJECT}/_git/${GITOPS_REPO}"
+                        }
+
+                        // get the archived YAML from previous stage
+                        unstash 'k8s-yaml'
+
+                        // Ensure target directory exists
+                        sh "mkdir -p ./brklub/templates/${PROJECT_NAME}"
+
+                        // Move the file to the correct location
+                        sh "cp kubernetes_final.yaml ./brklub/templates/${PROJECT_NAME}/kubernetes.yaml"
+
+                        // Configure Git and push changes
+                        sh 'git config --global user.email "jenkins@dafolo.dk"'
+                        sh 'git config --global user.name "Jenkins"'
+                        sh "git add brklub/templates/${PROJECT_NAME}/kubernetes.yaml"
+                        sh "git commit -m \"kubernetes.yaml changed by jenkins - ${PROJECT_NAME}:${PROJECT_VERSION}\""
+                        sh 'git push origin HEAD:master'
+                    }
+                }
+            }
+        }
+    }
+    post { 
+        always { 
+            cleanWs()
+            echo 'Workspace slettet'
+        }
+    }
+}
+
+def setDefaultGitOpsRepo() {
+    // If GITOPS_REPO is not set, assign a default value
+    if (!env.GITOPS_REPO) {
+        env.GITOPS_REPO = 'dev-GitOps-BrKlub-Apps'
+    }
+    // Return the value for potential further use
+    return env.GITOPS_REPO
+}
+
+def getK8sYaml(appName, imageTag, containerRegistry, imagePullSecret) {
+    return """
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: ${appName}
+    app.kubernetes.io/version: 1.0.0
+  name: ${appName}
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app.kubernetes.io/name: ${appName}
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: ${appName}
+    app.kubernetes.io/version: ${imageTag}
+  name: ${appName}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ${appName}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ${appName}
+        app.kubernetes.io/version: ${imageTag}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - image: ${containerRegistry}/${appName}:${imageTag}
+        imagePullPolicy: Always
+        name: ${appName}
+        volumeMounts:
+        - name: ${appName}-config
+          mountPath: /usr/share/nginx/html/assets/runtime-env.js
+          subPath: runtime-env.js
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
+      imagePullSecrets:
+      - name: ${imagePullSecret}
+      volumes:
+      - name: ${appName}-config
+        configMap:
+          name: ${appName}-config
+"""
+}
+ 

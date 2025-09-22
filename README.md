@@ -204,3 +204,7 @@ these secrets contains username, password and other info that is useful/needed f
           name: cluster-example-app
           key: password
 ```
+
+### ArgoCD
+
+-   Install argocd via helm
