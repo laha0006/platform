@@ -1,0 +1,15 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: argocd-passthrough
+  namespace: argocd
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: HostSNI(`argocd.larsfriis.dev`)
+    services:
+    - name: argocd-server
+      port: 443
+  tls:
+    passthrough: true
