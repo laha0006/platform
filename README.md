@@ -254,3 +254,13 @@ spec:
     tls:
         passthrough: true
 ```
+
+### promethous && grafana
+
+-   add helm repo prometheus-community
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+```
+
+-   install with
