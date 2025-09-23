@@ -207,4 +207,50 @@ these secrets contains username, password and other info that is useful/needed f
 
 ### ArgoCD
 
--   Install argocd via helm
+-   Install argocd
+
+```bash
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
+
+##### SSL passthrough with traefik
+
+the example config from the docs uses nginx, the equaivalent setup using taefik is a bit different.
+
+create a certificate, managed by cert-manager.
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+    name: argocd-server-cert
+    namespace: argocd
+spec:
+    secretName: argocd-server-tls
+    issuerRef:
+        kind: ClusterIssuer
+        name: letsencrypt-production
+    dnsNames:
+        - argocd.larsfriis.dev
+```
+
+-   create a traefik CRD ingresRouteTCP, with SSL passthrough.
+
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+    name: argocd-passthrough
+    namespace: argocd
+spec:
+    entryPoints:
+        - websecure
+    routes:
+        - match: HostSNI(`argocd.larsfriis.dev`)
+          services:
+              - name: argocd-server
+                port: 443
+    tls:
+        passthrough: true
+```
