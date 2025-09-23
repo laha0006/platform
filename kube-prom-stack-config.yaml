@@ -61,6 +61,17 @@ prometheus:
     #nodeSelector:
     #workload: monitor
 grafana:
+  additionalDataSources:
+  - name: Loki
+    type: loki
+    url: http://loki-gateway.monitoring.svc.cluster.local
+    access: proxy
+    # Even with auth_enabled: false, Loki requires an org ID header
+    # This is a known quirk - the value can be anything since auth is disabled
+    jsonData:
+      httpHeaderName1: "X-Scope-OrgID"
+    secureJsonData:
+      httpHeaderValue1: "fake"
   enabled: true
   # -- the grafana admin password
   adminPassword: prom-operator
