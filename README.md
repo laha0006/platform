@@ -286,5 +286,9 @@ helm upgrade --install prometheus promethus-community/kube-prometheus-stack -n m
 ### log collection with grafana alloy
 
 ```bash
+kubectl create configmap --namespace monitoring alloy-config "--from-file=alloy.config=./alloy.config"
+```
+
+```bash
 helm upgrade --install alloy grafana/alloy -n monitoring -f values.yaml
 ```

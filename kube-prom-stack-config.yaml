@@ -61,6 +61,18 @@ prometheus:
     #nodeSelector:
     #workload: monitor
 grafana:
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-production
+    hosts:
+    - grafana.larsfriis.dev
+    tls:
+    - secretName: grafana-general-tls
+      hosts:
+      - grafana.larsfriis.dev
+
   additionalDataSources:
   - name: Loki
     type: loki
