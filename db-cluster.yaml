@@ -1,0 +1,11 @@
+kind: Cluster
+metadata:
+  name: cluster-example
+spec:
+  instances: 3
+
+  storage:
+    size: 1Gi
+
+  monitoring:
+    enablePodMonitor: true

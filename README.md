@@ -280,7 +280,7 @@ helm repo add prometheus https://prometheus-community.github.io/helm-charts
 -   install with custom yaml
 
 ```bash
-helm upgrade --install prometheus promethus-community/kube-prometheus-stack -n monitoring -f values.yaml
+helm upgrade --install prometheus prometheus-community/kube-prometheus-stack -n monitoring -f values.yaml
 ```
 
 ### log collection with grafana alloy
