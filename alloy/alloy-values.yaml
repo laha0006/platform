@@ -1,0 +1,19 @@
+configMap:
+  create: false
+  name: alloy-config
+  # Key is "config.alloy" in your CM
+  key: config.alloy
+
+# These two lines ensure backward/forward compatibility with chart variants
+alloy:
+  existingConfigMapKey: config.alloy
+
+# Required so loki.source.kubernetes and file sources can read logs on the node
+extraVolumes:
+- name: varlog
+  hostPath:
+    path: /var/log
+extraVolumeMounts:
+- name: varlog
+  mountPath: /var/log
+  readOnly: true
